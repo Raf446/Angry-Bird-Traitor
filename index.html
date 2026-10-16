@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Angry Birds: Traitor in the Nest</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  html,body{background:#0f172a;color:#e2e8f0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+  body{min-height:100vh;background:radial-gradient(ellipse at top,#1e293b 0%,#0f172a 60%)}
+  #stage{transition:opacity .35s ease,transform .35s ease}
+  #stage.out{opacity:0;transform:translateY(14px)}
+  .fade-in{animation:fadeIn .6s ease both}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .rpg{background:#1e293b;border:2px solid #475569;border-radius:14px;box-shadow:0 0 0 3px #0f172a,0 8px 24px rgba(0,0,0,.45)}
+  .choice{display:block;width:100%;text-align:left;margin-top:6px;padding:9px 12px;border-radius:10px;background:#0f172a;border:1px solid #475569;color:#f1f5f9;font-size:.92rem;transition:background .15s,border-color .15s,transform .1s;cursor:pointer}
+  .choice:hover:not(:disabled){background:#7f1d1d;border-color:#ef4444}
+  .choice:active{transform:scale(.98)}
+  .choice:disabled{opacity:.4;cursor:not-allowed}
+  .btn{padding:10px 18px;border-radius:12px;font-weight:700;color:#fff;background:#dc2626;border:2px solid #fca5a5;cursor:pointer;transition:transform .1s,background .15s}
+  .btn:hover{background:#b91c1c}.btn:active{transform:scale(.97)}
+  .btn.green{background:#059669;border-color:#6ee7b7}.btn.green:hover{background:#047857}
+  .btn.amber{background:#d97706;border-color:#fcd34d}.btn.amber:hover{background:#b45309}
+  .pip{display:inline-block;width:13px;height:13px;border-radius:50%;border:2px solid #f59e0b;background:transparent;margin-right:3px;transition:background .3s}
+  .pip.on{background:#f59e0b;box-shadow:0 0 8px #f59e0b}
+  .bar{height:8px;border-radius:6px;background:#0f172a;overflow:hidden;border:1px solid #475569}
+  .bar i{display:block;height:100%;transition:width .6s ease,background .6s}
+  .hot{cursor:pointer;outline:none}
+  .hot .ring{opacity:0;transition:opacity .2s}
+  .hot:hover .ring,.hot:focus .ring{opacity:1}
+  .hot .pulse{animation:pulse 1.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .hot.done .pulse{display:none}
+  .hot.done .body{opacity:.55}
+  .hot .check{display:none}.hot.done .check{display:block}
+  @keyframes pulse{0%,100%{opacity:.25;transform:scale(.92)}50%{opacity:.95;transform:scale(1.05)}}
+  .av{overflow:visible;display:block}
+  .av-wrap{transition:transform .3s,filter .3s;opacity:.85}
+  .av-wrap.speaking{transform:scale(1.18) translateY(-6px);filter:drop-shadow(0 0 8px #fbbf24);opacity:1}
+  .shake{animation:shake .38s linear infinite}
+  .tremble{animation:tremble .9s linear infinite}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px) rotate(-2deg)}75%{transform:translateX(5px) rotate(2deg)}}
+  @keyframes tremble{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.5px)}75%{transform:translateX(1.5px)}}
+  .flick{animation:flick .25s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+  @keyframes flick{from{opacity:.7;transform:scale(.85)}to{opacity:1;transform:scale(1.15)}}
+  .glint{animation:glint 2s ease-in-out infinite}
+  @keyframes glint{0%,100%{opacity:.2}50%{opacity:1}}
+  .card{background:#1e293b;border:2px solid #475569;border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;color:inherit}
+  .card:hover:not(:disabled){transform:translateY(-3px);border-color:#f59e0b;box-shadow:0 6px 18px rgba(245,158,11,.25)}
+  .card:disabled{opacity:.4;cursor:not-allowed}
+  .card.picked{border-color:#10b981}
+  .proj{position:absolute;left:50%;bottom:38%;transform:translate(-50%,0);transition:transform .8s ease}
+  .proj.pull{transform:translate(calc(-50% - 46px),20px) rotate(-12deg)}
+  .proj.fly{transition:transform 1.8s cubic-bezier(.2,.65,.35,1),opacity 1.8s;transform:translate(calc(-50% + 95vw),-80vh) rotate(1080deg) scale(.2);opacity:.2}
+  #drawer{width:17rem;flex-shrink:0}
+  #scrim{display:none}
+  @media (max-width:767px){
+    #drawer{position:fixed;top:0;right:0;bottom:0;z-index:40;transform:translateX(105%);transition:transform .3s ease;overflow-y:auto;border-radius:14px 0 0 14px}
+    #drawer.open{transform:none}
+    #scrim.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:30}
+  }
+  #toast{position:fixed;top:68px;left:50%;transform:translate(-50%,-20px);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:50;background:#065f46;border:2px solid #6ee7b7;padding:8px 16px;border-radius:12px;font-weight:600;font-size:.9rem;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  #toast.warn{background:#7f1d1d;border-color:#fca5a5}
+  .badge-bump{animation:bump .5s}
+  @keyframes bump{50%{transform:scale(1.5)}}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div id="scrim"></div>
+<div id="app" class="max-w-4xl mx-auto min-h-screen flex flex-col">
+  <header class="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-700 bg-slate-900/80 sticky top-0 z-20 backdrop-blur">
+    <div class="min-w-0">
+      <div class="text-sm sm:text-base font-extrabold text-red-500 truncate">Angry Birds: Traitor in the Nest</div>
+      <div id="phase" class="text-xs text-amber-500 uppercase tracking-widest truncate"></div>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div class="text-xs sm:text-sm text-amber-400 flex items-center" title="Energi"><span class="mr-1 hidden sm:inline">Energi</span><span id="energy" class="flex items-center"></span></div>
+      <button id="mute" class="px-2 py-1 rounded-lg border border-slate-600 bg-slate-800 text-sm" aria-label="Suara">🔊</button>
+      <button id="invbtn" class="md:hidden px-3 py-1 rounded-lg border border-amber-500 bg-slate-800 text-sm text-amber-400">Bukti <span id="invcount" class="inline-block font-bold">0</span></button>
+    </div>
+  </header>
+  <div class="flex flex-1 gap-3 p-3 min-h-0">
+    <main class="flex-1 min-w-0 flex flex-col">
+      <div id="stage" class="flex-1 pb-3"></div>
+      <div id="dialog" class="rpg p-3 sticky bottom-2 z-10 flex gap-3 items-start cursor-pointer select-none">
+        <div id="portrait" class="shrink-0 w-14 sm:w-16"></div>
+        <div class="flex-1 min-w-0">
+          <div id="speaker" class="font-extrabold text-sm tracking-wide"></div>
+          <p id="dtext" class="text-sm sm:text-base leading-relaxed min-h-[3.2rem]"></p>
+          <div id="choices"></div>
+        </div>
+        <span id="more" class="hidden text-amber-400 animate-pulse">▼</span>
+      </div>
+    </main>
+    <aside id="drawer" class="rpg p-3 self-start md:sticky md:top-16">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-extrabold text-amber-400">🔎 Inventori Bukti</h2>
+        <button id="invclose" class="md:hidden px-2 rounded border border-slate-600">✕</button>
+      </div>
+      <div id="inv" class="space-y-2"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===================== HELPERS ===================== */
+const $ = s => document.querySelector(s);
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const shuffle = a => { const r = a.slice(); for(let i = r.length - 1; i > 0; i--){ const j = rnd(i + 1); const t = r[i]; r[i] = r[j]; r[j] = t; } return r; };
+const val = (x, ...args) => typeof x === 'function' ? x(...args) : x;
+const SUSPECTS = ['chuck', 'bomb', 'matilda'];
+const NAME = { chuck:'Chuck', bomb:'Bomb', matilda:'Matilda', red:'Red', pig:'Minion Pig' };
+const firstSentence = t => (t.match(/^[^.!?]*[.!?]/) || [t])[0];
+const pickBy = (obj, X, c) => typeof obj === 'function' ? obj(X, c) : obj[X];
+
+/* ===================== STATE ===================== */
+const MAX_ENERGY = 4;
+const fresh = () => ({
+  phase: 'intro',
+  energy: MAX_ENERGY,
+  inventory: [],
+  interrogated: [],
+  stressLevels: { chuck: 20, bomb: 15, matilda: 10 },
+  accused: null,
+  endingType: null,
+  scenario: null
+});
+const state = fresh();
+const ui = { case:null, caseNo:1, locked:false, searched:{}, current:null, alibi:{}, resolved:{}, log:[], suspicionRed:0, timer:null, typing:false, opts:{}, full:'', endDone:false, end:null, muted:false, toastT:null, seen:{} };
+const PH = { intro:'Prolog', investigation:'Olah TKP', interrogation:'Interogasi', trial:'Sidang Meja Bundar', judgment:'Keputusan', ending:'Ending' };
+const TOTAL_ENDINGS = 10;
+try { const s = JSON.parse(localStorage.getItem('abtn_seen') || '{}'); if(s && typeof s === 'object') ui.seen = s; } catch(e) { ui.seen = {}; }
+
+/* ===================== AUDIO ENGINE ===================== */
+let ac = null;
+function actx(){
+  if(!ac){ const C = window.AudioContext || window.webkitAudioContext; if(C) ac = new C(); }
+  if(ac && ac.state === 'suspended') ac.resume();
+  return ac;
+}
+function tone(freq, dur, type, vol, delay, endFreq){
+  if(ui.muted) return;
+  const a = actx(); if(!a) return;
+  const t = a.currentTime + (delay || 0);
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, t);
+  if(endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol || .1, t + .02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(t); o.stop(t + dur + .05);
+}
+const sfx = {
+  click(){ tone(740, .07, 'square', .05); },
+  chime(){ [523.25, 659.25, 783.99].forEach((f, i) => tone(f, .9, 'sine', .12, i * .07)); tone(1046.5, 1, 'triangle', .08, .22); },
+  buzz(){
+    if(ui.muted) return; const a = actx(); if(!a) return;
+    const t = a.currentTime, o = a.createOscillator(), g = a.createGain(), l = a.createOscillator(), lg = a.createGain();
+    o.type = 'sawtooth'; o.frequency.value = 70;
+    l.type = 'sine'; l.frequency.value = 18; lg.gain.value = .05;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.09, t + .1); g.gain.exponentialRampToValueAtTime(.0001, t + 1.3);
+    l.connect(lg); lg.connect(g.gain); o.connect(g); g.connect(a.destination);
+    o.start(t); l.start(t); o.stop(t + 1.4); l.stop(t + 1.4);
+  },
+  heartbeat(){
+    for(let i = 0; i < 5; i++){
+      const d = i * (0.72 - i * 0.07);
+      tone(62, .16, 'sine', .4, d, 38);
+      tone(52, .2, 'sine', .3, d + .17, 34);
+    }
+  },
+  whoosh(){ tone(1400, 1.2, 'sawtooth', .07, 0, 70); tone(900, 1.2, 'sine', .08, 0, 50); },
+  sting(){ tone(220, .5, 'triangle', .12, 0, 110); tone(233, .5, 'triangle', .1, 0, 117); }
+};
+
+/* ===================== SVG CHARACTERS ===================== */
+const BIRD = {
+  red: `<ellipse cx="60" cy="110" rx="28" ry="5" fill="#000" opacity=".25"/>
+    <path d="M52 26 Q46 10 56 6 Q58 14 58 22 Q66 8 76 12 Q72 20 68 28Z" fill="#7f1d1d"/>
+    <circle cx="60" cy="66" r="42" fill="#dc2626"/>
+    <ellipse cx="60" cy="90" rx="26" ry="15" fill="#fca5a5"/>
+    <ellipse cx="45" cy="62" rx="9" ry="10" fill="#fff"/><ellipse cx="75" cy="62" rx="9" ry="10" fill="#fff"/>
+    <circle cx="48" cy="64" r="4" fill="#111"/><circle cx="72" cy="64" r="4" fill="#111"/>
+    <path d="M28 42 L57 60" stroke="#111" stroke-width="9" stroke-linecap="round"/>
+    <path d="M92 42 L63 60" stroke="#111" stroke-width="9" stroke-linecap="round"/>
+    <path d="M47 72 Q60 64 73 72 L60 94Z" fill="#f97316" stroke="#c2410c" stroke-width="2" stroke-linejoin="round"/>`,
+  chuck: `<ellipse cx="62" cy="112" rx="30" ry="5" fill="#000" opacity=".25"/>
+    <g transform="rotate(12 60 64)">
+    <path d="M52 30 L26 4 L40 26 L12 16 L38 38 L8 40 L46 50Z" fill="#111"/>
+    <path d="M60 8 L112 106 L8 106Z" fill="#facc15" stroke="#ca8a04" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="47" cy="62" r="11" fill="#fff"/><circle cx="75" cy="62" r="11" fill="#fff"/>
+    <circle cx="49" cy="63" r="2.8" fill="#111"/><circle cx="73" cy="63" r="2.8" fill="#111"/>
+    <path d="M34 48 Q46 38 58 48" stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M64 48 Q76 38 88 48" stroke="#111" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M50 76 L76 76 L63 94Z" fill="#f97316" stroke="#c2410c" stroke-width="2" stroke-linejoin="round"/>
+    </g>`,
+  bomb: `<ellipse cx="60" cy="112" rx="28" ry="5" fill="#000" opacity=".3"/>
+    <path d="M60 28 Q58 14 70 10" stroke="#a16207" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="72" cy="9" r="7" fill="#f59e0b" class="flick"/><circle cx="72" cy="9" r="3.5" fill="#fde047" class="flick"/>
+    <circle cx="60" cy="70" r="42" fill="#0b0f19" stroke="#1f2937" stroke-width="2"/>
+    <circle cx="48" cy="42" r="4" fill="#6b7280"/><circle cx="60" cy="38" r="5" fill="#6b7280"/><circle cx="72" cy="43" r="3.5" fill="#6b7280"/>
+    <ellipse cx="60" cy="94" rx="24" ry="13" fill="#1f2937"/>
+    <ellipse cx="45" cy="64" rx="9" ry="10" fill="#fff"/><ellipse cx="75" cy="64" rx="9" ry="10" fill="#fff"/>
+    <circle cx="47" cy="66" r="4" fill="#111"/><circle cx="73" cy="66" r="4" fill="#111"/>
+    <path d="M32 50 L55 59" stroke="#e5e7eb" stroke-width="5" stroke-linecap="round"/>
+    <path d="M88 50 L65 59" stroke="#e5e7eb" stroke-width="5" stroke-linecap="round"/>
+    <path d="M47 74 Q60 66 73 74 L60 94Z" fill="#f97316" stroke="#c2410c" stroke-width="2" stroke-linejoin="round"/>`,
+  matilda: `<ellipse cx="60" cy="112" rx="26" ry="5" fill="#000" opacity=".25"/>
+    <path d="M48 28 Q52 10 58 22 Q64 6 70 22 Q78 14 74 30Z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+    <ellipse cx="60" cy="68" rx="37" ry="43" fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
+    <circle cx="37" cy="78" r="8" fill="#f9a8d4" opacity=".85"/><circle cx="83" cy="78" r="8" fill="#f9a8d4" opacity=".85"/>
+    <ellipse cx="46" cy="62" rx="9" ry="8" fill="#fff" stroke="#94a3b8" stroke-width="1.5"/>
+    <ellipse cx="74" cy="62" rx="9" ry="8" fill="#fff" stroke="#94a3b8" stroke-width="1.5"/>
+    <circle cx="49" cy="65" r="3.6" fill="#334155"/><circle cx="71" cy="65" r="3.6" fill="#334155"/>
+    <path d="M36 62 Q46 52 56 62Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+    <path d="M64 62 Q74 52 84 62Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+    <path d="M36 50 Q46 44 56 52" stroke="#64748b" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M65 48 Q76 40 86 48" stroke="#64748b" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M50 74 Q60 69 70 74 L60 88Z" fill="#f97316" stroke="#c2410c" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M50 94 Q64 100 76 88" stroke="#94a3b8" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
+  pig: `<ellipse cx="60" cy="112" rx="32" ry="5" fill="#000" opacity=".35"/>
+    <path d="M26 44 L18 24 L42 36Z" fill="#5f7f69"/><path d="M94 44 L102 24 L78 36Z" fill="#5f7f69"/>
+    <circle cx="60" cy="70" r="42" fill="#8fb39a"/>
+    <circle cx="60" cy="70" r="42" fill="#0f172a" opacity=".6"/>
+    <ellipse cx="60" cy="82" rx="18" ry="13" fill="#6f9478" opacity=".8"/>
+    <ellipse cx="53" cy="82" rx="3.5" ry="5" fill="#0b1220"/><ellipse cx="67" cy="82" rx="3.5" ry="5" fill="#0b1220"/>
+    <circle cx="44" cy="64" r="5" fill="#fde047" class="glint"/><circle cx="76" cy="64" r="5" fill="#fde047" class="glint"/>
+    <circle cx="44" cy="64" r="2" fill="#111"/><circle cx="76" cy="64" r="2" fill="#111"/>
+    <path d="M32 40 L38 14 L51 31 L60 8 L69 31 L82 14 L88 40Z" fill="#fbbf24" stroke="#b45309" stroke-width="2.5" stroke-linejoin="round"/>
+    <rect x="32" y="38" width="56" height="7" rx="2" fill="#f59e0b" stroke="#b45309" stroke-width="2"/>
+    <circle cx="60" cy="24" r="3" fill="#fff" class="glint"/><circle cx="40" cy="22" r="2" fill="#fff" class="glint"/><circle cx="80" cy="22" r="2" fill="#fff" class="glint"/>`
+};
+function avatar(id, size, panic){
+  const sweat = panic ? `<path d="M100 36 Q108 48 100 54 Q92 48 100 36Z" fill="#7dd3fc"/><path d="M18 40 Q25 50 18 55 Q11 50 18 40Z" fill="#7dd3fc"/>` : '';
+  return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" class="av" role="img" aria-label="${id}">${BIRD[id]}${sweat}</svg>`;
+}
+const SP = {
+  red:{n:'Red',c:'#f87171'}, chuck:{n:'Chuck',c:'#facc15'}, bomb:{n:'Bomb',c:'#d1d5db'},
+  matilda:{n:'Matilda',c:'#f9a8d4'}, pig:{n:'King Pig',c:'#86efac'}, narr:{n:'Narator',c:'#fbbf24'}
+};
+
+/* ===================== EVIDENCE ICONS ===================== */
+function icon(t, col){
+  const wrap = inner => `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  switch(t){
+    case 'paper': return wrap(`<rect x="5" y="3" width="14" height="18" rx="2" fill="#e7e5e4"/><path d="M8 8h8M8 12h8M8 16h5"/>`);
+    case 'feather': return wrap(`<path d="M12 2 L21 20 H3 Z" fill="${col}" fill-opacity=".6"/>`);
+    case 'flame': return wrap(`<path d="M12 3 C14 8 18 10 18 15 A6 6 0 0 1 6 15 C6 11 9 10 9 7 C10 8 11 8 12 3Z" fill="${col}" fill-opacity=".6"/>`);
+    case 'wax': return wrap(`<path d="M12 3 C16 9 18 12 18 15 A6 6 0 0 1 6 15 C6 12 8 9 12 3Z" fill="${col}" fill-opacity=".6"/><circle cx="10" cy="14" r="1.2" fill="#fff"/>`);
+    case 'clock': return wrap(`<circle cx="12" cy="12" r="9" fill="#1e293b"/><path d="M12 7v5l3 2"/>`);
+    case 'cup': return wrap(`<path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" fill="#e7e5e4" fill-opacity=".8"/><path d="M16 10h2a2 2 0 0 1 0 5h-2"/><path d="M8 4v2M12 4v2"/>`);
+    case 'glasses': return wrap(`<circle cx="7" cy="14" r="4"/><circle cx="17" cy="14" r="4"/><path d="M11 14h2M3 12 L1 8M21 12l2-4"/>`);
+    case 'key': return wrap(`<circle cx="8" cy="12" r="4" fill="${col}" fill-opacity=".4"/><path d="M12 12h9M18 12v4M21 12v3"/>`);
+    case 'claw': return wrap(`<path d="M5 4 L9 20M11 3 L13 20M17 4 L16 20"/>`);
+    case 'envelope': return wrap(`<rect x="3" y="6" width="18" height="13" rx="2" fill="#e7e5e4"/><path d="M3 7l9 7 9-7"/>`);
+    case 'drop': return wrap(`<path d="M12 3 C15 8 18 11 18 15 A6 6 0 0 1 6 15 C6 11 9 8 12 3Z" fill="${col}" fill-opacity=".7"/>`);
+    default: return wrap(`<circle cx="12" cy="12" r="8"/>`);
+  }
+}
+
+/* ===================== EVIDENCE POOL (17 item unik) ===================== */
+const EV = {
+  blueprint:{ name:'Cetak Biru Roket Rahasia', icon:'paper', color:'#fbbf24', points:'chuck',
+    desc:'Gambar roket katapel eksperimental. Tulisan tangannya miring dan tergesa-gesa, dengan coretan rute patroli.',
+    found:'tersembunyi gulungan cetak biru roket katapel eksperimental. Tulisan tangannya miring dan tergesa-gesa, dengan coretan rute patroli kawanan.' },
+  feather_alarm:{ name:'Bulu Kuning di Sakelar Alarm', icon:'feather', color:'#facc15', points:'chuck',
+    desc:'Bulu kuning segitiga terjepit di sakelar alarm. Alarm dimatikan sekitar pukul 02.10.',
+    found:'sakelar alarm sarang ternyata dimatikan sekitar pukul 02.10. Sehelai bulu kuning segitiga terjepit di tuasnya.',
+    explain:'Bulu itu?! Aku memang sering lewat sakelar itu waktu patroli! Bulu rontok itu wajar, Red!' },
+  wax_plug:{ name:'Sumbatan Sumbu Lilin Kerajaan Babi', icon:'wax', color:'#4ade80', points:'bomb',
+    desc:'Sumbat sumbu dari lilin hijau khusus dengan cap kerajaan babi. Tidak dijual di pulau ini.',
+    found:'tertancap sumbatan sumbu berbahan lilin hijau khusus berlambang kerajaan babi.' },
+  timer:{ name:'Timer Detonator Mekanik', icon:'clock', color:'#f87171', points:'bomb',
+    desc:'Timer mekanik kecil diset pukul 02.30, tersambung ke gembok gerbang. Alatnya sudah mati.',
+    found:'terpasang timer detonator mekanik yang diset pukul 02.30 dan terhubung ke gembok. Alatnya sudah mati.',
+    explain:'T-timer itu... aku memang merakit alat kecil seperti itu untuk latihan! Tapi bukan untuk gerbang!' },
+  pact:{ name:'Pakta Rahasia Mahkota Babi', icon:'envelope', color:'#4ade80', points:'matilda',
+    desc:'Surat berlambang cap mahkota babi: tawaran gencatan senjata suci jika telur diserahkan.',
+    found:'tersembunyi surat rahasia berlambang cap mahkota babi: tawaran gencatan senjata suci bila telur diserahkan di dermaga.' },
+  sleep_tea:{ name:'Daun Teh Penidur di Cangkir Penjaga', icon:'cup', color:'#a3e635', points:'matilda',
+    desc:'Ampas daun teh penidur di cangkir para penjaga malam. Mereka tidur pulas sejak pukul 01.00.',
+    found:'ditemukan cangkir para penjaga malam berisi ampas daun teh penidur. Mereka tertidur pulas sejak pukul 01.00.',
+    explain:'Teh itu? Aku memang menyeduhkan teh untuk semua orang tiap malam, sayang. Mana kutahu ada daun penidur di dalamnya?' },
+  paint:{ name:'Cat Hijau Luntur di Balik Bulu', icon:'drop', color:'#4ade80', points:'$fake',
+    desc:'Segumpal bulu palsu. Di baliknya ada cat hijau yang luntur oleh keringat.',
+    found:'tertinggal segumpal bulu palsu. Di baliknya ada cat hijau yang luntur oleh keringat.' },
+  glasses:{ name:'Kacamata Bulat Mata-mata Babi', icon:'glasses', color:'#e2e8f0', points:'$fake',
+    desc:'Kacamata bulat berlensa tebal jatuh di semak, bergambar cap hidung babi kecil. Jejaknya sekitar pukul 02.00.',
+    found:'terjatuh kacamata bulat berlensa tebal dengan cap hidung babi kecil di gagangnya. Jejak di sekitarnya berumur sekitar pukul 02.00.',
+    explain:'Kacamata? Aku memang sedang mencoba gaya baru, Red! Jangan terlalu serius!' },
+  note_evac:{ name:'Catatan Evakuasi Darurat', icon:'paper', color:'#f87171', points:'red',
+    desc:'Catatan tulisan tangan rapi: "Pindahkan telur ke bunker, jangan beritahu siapa pun." Tulisannya terasa akrab.',
+    found:'tertinggal secarik catatan: "EVAKUASI DARURAT: pindahkan telur ke bunker, jangan beritahu siapa pun." Tulisan tangannya rapi dan sangat akrab.',
+    thought:'Tulisan ini... tulisan tanganku sendiri? Tapi aku tidak ingat pernah menulisnya.',
+    redReact:'Catatan ini... itu tulisan tanganmu sendiri, Red. Aku mengenalinya dari huruf R besarnya.' },
+  scratch:{ name:'Goresan Bulu Merah di Brankas', icon:'claw', color:'#f87171', points:'red',
+    desc:'Goresan halus dengan serpihan bulu merah pekat di engsel brankas. Sekitar pukul 03.00, tanpa tanda dobrakan.',
+    found:'ada goresan halus di engsel brankas telur dengan serpihan bulu merah pekat. Tak ada tanda dobrakan, dan semuanya terjadi sekitar pukul 03.00.',
+    thought:'Bulu merah pekat... sama seperti warna buluku?',
+    redReact:'Bulu merah di brankas? ... Red, hanya ada satu burung merah di pulau ini.' },
+  spare_key:{ name:'Kunci Cadangan di Bandana Red', icon:'key', color:'#fbbf24', points:'red',
+    desc:'Kunci cadangan brankas telur, ditemukan di saku bandana Red sendiri. Ujungnya masih berlumpur bunker.',
+    found:'ditemukan kunci cadangan brankas telur! Lumpur bunker masih menempel di ujungnya.',
+    thought:'Kunci cadangan... di bandanaku? Kenapa ada lumpur bunker di sini?',
+    redReact:'Kunci itu dari kantongmu sendiri? Red... kau yang memegang kunci cadangan itu.' },
+  sulfur:{ name:'Residu Belerang Pekat', icon:'flame', color:'#fde047', points:'bomb',
+    desc:'Tanaman gosong berbau sulfur mesiu pekat di sekitar lokasi.',
+    found:'tanaman gosong berbau sulfur mesiu yang pekat.',
+    explain:'B-belerang itu? Aku memang latihan menahan ledakan kemarin sore! Sungguh!' },
+  fuse_ash:{ name:'Abu Sumbu Terbakar', icon:'flame', color:'#9ca3af', points:'bomb',
+    desc:'Abu hitam bekas sumbu yang sudah habis terbakar.',
+    found:'terdapat abu hitam bekas sumbu yang habis terbakar.',
+    explain:'A-abu sumbu? Itu sisa percobaan kecilku! Aku selalu membersihkannya... kali ini lupa.' },
+  feather_vent:{ name:'Bulu Kuning Segitiga', icon:'feather', color:'#eab308', points:'chuck',
+    desc:'Sehelai bulu kuning berbentuk segitiga, terjepit di serpihan kayu patah.',
+    found:'terjepit sehelai bulu kuning berbentuk segitiga di serpihan kayu yang patah.',
+    explain:'Bulu kuningku? Hehe, aku memang lewat sini tiap pagi buat pemanasan! Semua orang tahu!' },
+  skid:{ name:'Jejak Selip Kecepatan Tinggi', icon:'claw', color:'#d97706', points:'chuck',
+    desc:'Garis tanah tergores panjang, tanda berhenti mendadak dari lari sangat cepat.',
+    found:'ada jejak selip panjang di tanah, tanda berhenti mendadak dari lari yang sangat cepat.',
+    explain:'Jejak selip? Itu latihan sprintku kemarin sore, Red!' },
+  white_feather:{ name:'Bulu Putih Halus', icon:'feather', color:'#f8fafc', points:'matilda',
+    desc:'Sehelai bulu putih halus yang harum bunga.',
+    found:'tersangkut sehelai bulu putih halus yang harum bunga.',
+    explain:'Bulu putihku? Oh sayang, aku rontok setiap hari. Sarang ini penuh buluku.' },
+  pamphlet:{ name:'Selebaran Perdamaian', icon:'paper', color:'#f9a8d4', points:'matilda',
+    desc:'Selebaran bertuliskan "Hentikan Perang Telur", bergambar merpati.',
+    found:'tergeletak selebaran bertuliskan "Hentikan Perang Telur" dengan gambar merpati.',
+    explain:'Selebaran itu? Aku membagikannya ke seluruh pulau, Red! Itu bukan rahasia!' }
+};
+const MISDIR = { chuck:['feather_vent', 'skid'], bomb:['sulfur', 'fuse_ash'], matilda:['white_feather', 'pamphlet'] };
+const HS = {
+  nest:{ name:'Sarang Utama', where:'Di Sarang Utama' },
+  vent:{ name:'Ventilasi Kayu Atas', where:'Di ventilasi kayu atas' },
+  fence:{ name:'Batas Pagar Selatan', where:'Di batas pagar selatan' },
+  desk:{ name:'Meja Kerja & Pot', where:'Di meja kerja dan pot tanaman' },
+  pocket:{ name:'Kantong Red', where:'Di kantong bandana Red sendiri', empty:'Di kantong bandana Red sendiri hanya ada remah bekal roti dan sehelai sapu tangan. Tak ada apa-apa. Energi terbuang.' }
+};
+
+/* ===================== SUSPECT PERSONALITY ===================== */
+const PERS = {
+  chuck:{ intro:'Hei hei, Red! Cepat saja ya, aku sibuk. Ada hal yang lebih cepat dari pertanyaanmu!',
+    deny:'Hah, itu bukan urusanku, Red!', smug:'Hehe, kau salah arah, Red.', anx:'Eh, e-eh... ', hys:'AAAH!!' },
+  bomb:{ intro:'A-ah, Red... jangan terlalu dekat. Aku sedang tidak stabil hari ini.',
+    deny:'A-aku tidak tahu soal itu!', smug:'Itu bukan punyaku, Red. Hati-hati menuduh.', anx:'A-ah... ', hys:'AAAAHH!!' },
+  matilda:{ intro:'Oh, Red sayang. Sampai harus menginterogasiku? Aku tersanjung.',
+    deny:'Oh Red, itu bukan milikku, sayang.', smug:'Kasihan sekali kau menuduh dengan benda itu, Red.', anx:'Hmm... ', hys:'Hh-HENTIKAN!' }
+};
+const tierName = v => v < 45 ? 'Tenang' : v < 75 ? 'Cemas' : 'Histeris';
+function mood(X, t){
+  const v = state.stressLevels[X];
+  if(v >= 75){ const m = t.match(/^[^.!?]*[.!?]?/)[0]; return PERS[X].hys + ' ' + m.toUpperCase() + t.slice(m.length); }
+  if(v >= 45) return PERS[X].anx + t;
+  return t;
+}
+
+/* ===================== SCENARIOS ===================== */
+const SCN = {
+  chuck:{ id:'chuck', title:'Telur yang Lenyap Saat Alarm Mati', crucial:'blueprint', ctx:'feather_alarm',
+    intro:[
+      ['narr','Pulau Burung, pukul tiga pagi. Alarm sarang mati misterius, patroli kawanan seolah lenyap, dan Telur Emas hilang dari brankas.'],
+      ['red','Seseorang tahu rute patroli kita luar dalam, dan tahu cara mematikan alarm. Orang itu ada di antara kita.']
+    ],
+    alibi:{
+      chuck:['Malam itu aku lari keliling bukit! Sepuluh kali! Tak ada yang lihat saking cepatnya!','Sudah kubilang, lari! Kau tahu aku tak bisa diam, Red.'],
+      bomb:['Aku jaga pagar selatan sendirian. Sepi. Sekilas ada bayangan kuning lewat sangat cepat, tapi kukira angin.','Sungguh, hanya bayangan kuning. Aku tidak berani mengejar.'],
+      matilda:['Aku menyeduh teh di sarang bawah, sayang. Lalu terdengar langkah sangat cepat melintasi lorong atas.','Tehnya enak, Red. Kau seharusnya minum, bukan menuduh.']
+    },
+    facts:{
+      chuck:'Chuck sering mondar-mandir membawa gulungan kertas sejak minggu lalu. Dia juga menggerutu soal gaya kepemimpinan Red yang kaku.',
+      bomb:'Bomb di pagar selatan, gemetar seperti biasa. Bau mesiunya wajar, dia sering berlatih di sana.',
+      matilda:'Matilda sibuk menyeduh teh dan berceloteh soal damai. Biasa saja.'
+    },
+    council:{
+      chuck:'Hei! Kenapa semua mata menatapku? Aku cuma cepat, bukan pengkhianat! Cari yang lebih mencurigakan!',
+      bomb:'A-aku tak berani menuduh... tapi ada bayangan kuning kencang yang lewat dekat sakelar alarm...',
+      matilda:'Duh, kalian ini. Tapi memang hanya satu di antara kita yang bisa mematikan alarm dan lari sebelum siapa pun berkedip.'
+    },
+    councilOpen:'Kawanan, Telur Emas dicuri. Alarm mati dan patroli bocor. Ada pengkhianat, dan hari ini seorang akan dilontarkan dari Katapel Raksasa.',
+    confess:() => 'I-itu cetak biruku! ... Baik! Aku menjual rute patroli ke Babi demi suku cadang roket katapel eksperimental! Kau terlalu kaku, Red! Aku butuh pengakuan, aku butuh KECEPATAN!',
+    logCrack:'Chuck runtuh: ia menjual rute patroli ke babi demi suku cadang roket katapel, karena iri pada kepemimpinan Red.',
+    truth:'Chuck-lah pengkhianatnya: iri pada kepemimpinan Red yang kaku, ia menjual rute patroli ke babi demi suku cadang roket.'
+  },
+  bomb:{ id:'bomb', title:'Gerbang yang Meledak Pelan', crucial:'wax_plug', ctx:'timer',
+    intro:[
+      ['narr','Fajar belum tiba. Gembok gerbang sarang rusak oleh ledakan kecil yang nyaris tanpa suara. Telur Emas hilang.'],
+      ['red','Ledakan sesenyap itu bukan ledakan biasa. Seseorang merencanakannya dengan hati-hati.']
+    ],
+    alibi:{
+      chuck:['Aku lari di bukit. Dari sana kulihat Bomb sendirian di pagar, berdiri lama menatap laut. Aneh.','Sudah kubilang, bukit! Aku tak sempat melihat yang lain, kecuali Bomb yang bengong itu.'],
+      bomb:['A-aku jaga pagar. Sendirian. Tidak ada apa-apa. Tidak ada ledakan! ...Eh.','S-sudah kubilang, jaga pagar! Kenapa kau terus bertanya?!'],
+      matilda:['Tidur di sarang bawah, sayang. Tapi aku mendengar bunyi tik-tik kecil dari arah gerbang. Seperti jam.','Tik-tik. Seperti jam. Hanya itu yang kuingat.']
+    },
+    facts:{
+      chuck:'Chuck lari seperti biasa. Kulihat dia melesat di bukit, jauh dari gerbang. Dia tak punya urusan di situ.',
+      bomb:'Bomb sering menyendiri di tebing. Kasihan, kawanan menjauhinya karena takut dia meledak.',
+      matilda:'Matilda membawa teh ke semua orang. Dia tak mungkin menyentuh gerbang.'
+    },
+    council:{
+      chuck:'Bomb sering dikucilkan, dan diam-diam dia menyusun sesuatu. Aku tak mau menuduh, tapi... hmm.',
+      bomb:'A-aku bukan pengkhianat! Aku hanya... lelah dijauhi! Jangan lontarkan aku!',
+      matilda:'Duh, kasihan sekali. Tak ada yang pernah bertanya bagaimana perasaan Bomb, bukan?'
+    },
+    councilOpen:'Kawanan, gerbang diledakkan nyaris tanpa suara dan Telur Emas lenyap. Ada pengkhianat, dan hari ini seorang akan dilontarkan dari Katapel Raksasa.',
+    confess:() => 'S-sumbatan lilin itu... J-JANGAN! Baik! King Pig menjanjikan suaka di Pulau Hening, tempat tak ada yang takut padaku! Di sini aku selalu dikucilkan! Aku hanya ingin tenang... aku hanya ingin diterima!',
+    logCrack:'Bomb runtuh: dikucilkan dan putus asa, ia menerima suaka "Pulau Hening" dari King Pig.',
+    truth:'Bomb-lah pengkhianatnya: sakit hati karena dikucilkan, ia menerima suaka "Pulau Hening" dari King Pig.'
+  },
+  matilda:{ id:'matilda', title:'Penjaga yang Tertidur', crucial:'pact', ctx:'sleep_tea',
+    intro:[
+      ['narr','Pukul satu malam, semua penjaga mendadak tertidur pulas. Saat fajar, gerbang terbuka tanpa paksaan dan Telur Emas lenyap.'],
+      ['red','Tak ada perkelahian, tak ada ledakan. Seseorang menidurkan para penjaga dengan sangat halus.']
+    ],
+    alibi:{
+      chuck:['Aku lari di bukit. Waktu lewat pos jaga, mereka semua sudah tidur. Aneh, padahal mereka tak pernah tidur.','Sudah kubilang, bukit! Aku cuma sempat melihat pos jaga yang sunyi.'],
+      bomb:['A-aku di pagar selatan. Tapi aku lihat Matilda membawa baki cangkir ke pos jaga tadi malam. Biasa sih, dia selalu begitu.','S-sungguh, aku hanya melihat baki cangkir itu.'],
+      matilda:['Aku tidur nyenyak di sarang bawah. Kalian kira aku bisa begadang seperti kalian? Kasihan Red, selalu curiga.','Sudah kujawab, sayang. Tidur. Mimpi indah tentang perdamaian.']
+    },
+    facts:{
+      chuck:'Chuck lari bolak-balik di bukit. Sibuk dengan dirinya sendiri, bukan dengan penjaga.',
+      bomb:'Bomb di pagar selatan seperti biasa. Dia gugup, tapi tidak berbahaya.',
+      matilda:'Matilda membawa baki cangkir teh ke pos jaga tengah malam. Katanya, damai dimulai dari secangkir teh.'
+    },
+    council:{
+      chuck:'Siapa pun yang menidurkan penjaga pasti punya akses ke dapur. Aku tak pernah masuk dapur!',
+      bomb:'M-matilda membawa teh ke pos jaga... tapi itu biasa, kan...?',
+      matilda:'Hh, kalian lelah dengan perang, kan? Aku juga. Mungkin si pengkhianat hanya ingin kita semua beristirahat.'
+    },
+    councilOpen:'Kawanan, para penjaga ditidurkan dan Telur Emas lenyap. Ada pengkhianat, dan hari ini seorang akan dilontarkan dari Katapel Raksasa.',
+    confess:() => 'Pakta itu... Hh. Baiklah. Ya, akulah yang menaruh daun teh penidur di cangkir para penjaga. Telur itu persembahan gencatan senjata suci! Lingkaran kebencian ini harus berakhir, Red! Perang takkan pernah usai kalau tak ada yang berani mengalah!',
+    logCrack:'Matilda runtuh oleh pakta mahkota babi: ia menidurkan penjaga dan menyerahkan telur sebagai "gencatan senjata suci".',
+    truth:'Matilda-lah pengkhianatnya: muak dengan lingkaran kebencian, ia menyerahkan telur sebagai "gencatan senjata suci".'
+  },
+  red:{ id:'red', title:'Brankas yang Terkunci Rapat', crucial:'note_evac', ctx:'scratch', extra:'spare_key',
+    intro:[
+      ['narr','Subuh. Brankas Telur Emas kosong, namun tak ada tanda dobrakan. Semua kunci masih utuh di tempatnya.'],
+      ['red','Tak ada yang dibobol. Jadi seseorang yang punya akses, atau seseorang yang sangat teliti.'],
+      ['red','Dan akhir-akhir ini aku sulit tidur. Kepalaku terasa berat sekali...']
+    ],
+    alibi:{
+      chuck:['Aku lari di bukit. Dan Red, kenapa kau bertanya alibiku? Tadi malam kulihat kau berjalan di sarang, matamu terbuka tapi kosong.','Sudah kubilang! Lagipula, Red, kaulah yang berkeliaran tadi malam!'],
+      bomb:['A-aku jaga pagar. Red... a-apa kau tidak ingat? Aku lihat kau membawa sesuatu ke arah bunker tengah malam.','S-sudah kukatakan, Red. Kau sungguh tidak ingat?'],
+      matilda:['Aku tidur, sayang. Tapi aku sempat melihatmu berjalan dalam tidur di lorong. Kau tampak lelah sekali.','Sudah kujawab. Dan Red, kapan terakhir kali kau tidur nyenyak?']
+    },
+    facts:{
+      chuck:'Chuck hanya lari di bukit, tak ada yang aneh. Justru yang aneh itu Red yang berjalan-jalan tengah malam.',
+      bomb:'Bomb? Tak ada yang aneh. Yang aneh itu Red yang membawa sesuatu ke arah bunker.',
+      matilda:'Matilda hanya membawa teh, seperti biasa. Red sih tidak ikut minum, ya?'
+    },
+    council:{
+      chuck:'Red, jujur saja: kau bertanya soal malam itu padahal kau yang paling janggal tadi malam. Kau berjalan sambil tidur!',
+      bomb:'R-Red... semua bukti mengarah ke sarangmu sendiri. Aku... aku tak tahu mau bilang apa.',
+      matilda:'Sayangku Red... mungkin bukan pencurian. Mungkin kau sendiri yang menyembunyikannya dalam tidurmu. Kau kelelahan.'
+    },
+    councilOpen:'Kawanan, Telur Emas hilang dari brankas yang terkunci. Seseorang pasti bersalah, dan hari ini aku harus memutuskan.',
+    confess:() => '',
+    logCrack:'',
+    truth:'Red sendiri pelakunya: dalam kondisi sleepwalking akibat stres berat, ia menyembunyikan telur di bunker pribadinya lalu melupakannya.'
+  },
+  pig:{ id:'pig', title:'Burung yang Terlalu Rapi', crucial:'paint', ctx:'glasses',
+    intro:[
+      ['narr','Telur Emas hilang tanpa jejak perlawanan. Para penjaga bersaksi bahwa salah satu tersangka kita bersikap aneh: terlalu sopan, terlalu rapi.'],
+      ['red','Ada yang tidak beres. Seseorang tidak sepenuhnya seperti yang terlihat.']
+    ],
+    alibi:{
+      chuck:['Aku berlari di bukit semalaman. Kalian kenal aku, kan? Kawan yang ramah!','Sudah kubilang, lari! Kawanmu ini selalu setia, Red. Sangat setia.'],
+      bomb:['A-aku jaga pagar selatan. Aku sama sekali tidak meledak. Aku tenang. Sangat tenang.','Sudah kubilang, aku tenang. Sangat, sangat tenang.'],
+      matilda:['Aku tidur, Red. Seperti burung normal pada umumnya.','Sudah kubilang. Aku burung yang normal.']
+    },
+    facts:(T, c) => T === c.fake
+      ? NAME[T] + ' berkeringat deras, dan keringatnya tampak kehijauan. Kukira itu cuma cahaya bulan.'
+      : NAME[T] + ' bersikap seperti biasa, seperti burung yang kukenal.',
+    council:(X, c) => X === c.fake
+      ? 'Kalian kenapa menatapku? Aku... aku burung biasa! Hik!'
+      : 'Aku tak tahu siapa, tapi ada yang rasanya bukan dirinya sendiri belakangan ini.',
+    councilOpen:'Kawanan, Telur Emas hilang. Salah satu dari kalian bertingkah ganjil. Hari ini seorang akan dilontarkan dari Katapel Raksasa.',
+    confess:X => 'Hik! Ngik... Baiklah, baiklah! Aku Minion Pig, bukan ' + NAME[X] + '! King Pig menyuruhku menyamar pakai kostum bulu palsu dan membuka gerbang. Tak ada burung yang berkhianat, hanya aku yang menyusup!',
+    logCrack:'Penyamar terbongkar oleh cat hijau luntur: ia Minion Pig berkostum bulu palsu yang diperintah King Pig.',
+    truth:c => 'Tidak ada burung yang berkhianat: ' + NAME[c.fake] + ' yang kalian lihat sebenarnya Minion Pig bermodal kostum bulu palsu.'
+  }
+};
+
+/* ===================== CASE GENERATOR ===================== */
+function generateRandomCase(force, avoid, forceFake){
+  const keys = Object.keys(SCN);
+  const pool = keys.filter(k => k !== avoid);
+  const key = force || pick(pool.length ? pool : keys);
+  const scn = SCN[key];
+  const fake = key === 'pig' ? (forceFake || pick(SUSPECTS)) : null;
+  const culprit = key === 'pig' ? fake : key;
+  const misTargets = key === 'red' ? shuffle(SUSPECTS).slice(0, 2) : SUSPECTS.filter(s => s !== culprit);
+  const mis = misTargets.map(t => pick(MISDIR[t]));
+  const items = [
+    { id:scn.crucial, kind:'crucial' },
+    { id:mis[0], kind:'mis' },
+    { id:mis[1], kind:'mis' },
+    { id:scn.ctx, kind:'ctx' }
+  ];
+  const spots = shuffle(['nest', 'vent', 'fence', 'desk']);
+  const placement = {}, kindOf = {};
+  items.forEach((it, i) => { placement[spots[i]] = it.id; kindOf[it.id] = it.kind; });
+  if(scn.extra){ placement.pocket = scn.extra; kindOf[scn.extra] = 'extra'; } else { placement.pocket = null; }
+  return { key, scn, fake, culprit, placement, kindOf };
+}
+const ptsOf = (it, c) => it.points === '$fake' ? c.fake : it.points;
+
+/* Aturan reaksi tersangka terhadap bukti (murni, tanpa efek samping) */
+function respond(X, itemId, c){
+  const it = EV[itemId], kind = c.kindOf[itemId], pts = ptsOf(it, c), p = PERS[X];
+  if(kind === 'crucial' && pts === X){
+    return { text:c.scn.confess(X), delta:100, crack:true, beat:true, log:val(c.scn.logCrack, c) };
+  }
+  if(pts === 'red'){
+    return { text:it.redReact, delta:6, crack:false, beat:kind === 'crucial', red:true,
+      log:NAME[X] + ' ditunjukkan "' + it.name + '": heran, lalu menunjuk Red sendiri.' };
+  }
+  if(pts === X){
+    return { text:it.explain, delta:12, crack:false, beat:kind === 'crucial',
+      log:NAME[X] + ' ditunjukkan "' + it.name + '": mengakui kaitannya tapi membantah dengan alasan wajar.' };
+  }
+  const base = X === c.culprit ? p.smug : p.deny;
+  const tail = kind === 'crucial' || kind === 'ctx'
+    ? ' Kalau melihatnya, ' + NAME[pts] + ' lebih cocok jadi pemiliknya daripada aku.'
+    : ' Itu urusan ' + NAME[pts] + ', bukan urusanku.';
+  return { text:base + tail, delta:X === c.culprit ? 2 : 3, crack:false, beat:kind === 'crucial',
+    log:NAME[X] + ' ditunjukkan "' + it.name + '": menyangkal dan menunjuk ' + NAME[pts] + '.' };
+}
+
+/* ===================== ENDINGS (10) ===================== */
+const ENDINGS = {
+  win_chuck:c => ({ title:'TRUE VICTORY: Chuck, Kecepatan yang Dihalau', tone:'win', scene:[['red',90],['bomb',90],['matilda',90],'egg'],
+    lines:[
+      ['red','Chuck. Kau menjual rute patroli kita demi suku cadang roket?'],
+      ['chuck','Habisnya kau kaku sekali, Red! Aku hanya ingin diakui! Dan... TUNGGU, jangan katapel!'],
+      ['narr','Chuck berlari kabur secepat kilat. Tapi Red melepas tali katapel tepat waktu. WHOOSH! Katapel lebih cepat dari pelari tercepat sekalipun.'],
+      ['narr','Chuck terpental, menabrak tiang layar kapal babi yang membawa telur. Kapal terbalik, telur terapung kembali ke pantai.'],
+      ['bomb','Telurnya selamat! Dan kita tak perlu meledakkan apa pun kali ini!'],
+      ['red','Mungkin aku memang terlalu kaku. Setelah ini, kita bicara soal kepemimpinan. Bersama-sama.']
+    ],
+    summary:'Chuck, si pelari tercepat, dihalau katapel sebelum kapal babi menyeberang. Telur selamat.' }),
+  win_bomb:c => ({ title:'TRUE VICTORY: Bomb, Sumbu di Tebing Laut', tone:'win', scene:[['red',90],['chuck',90],['matilda',90],['bomb',80],'egg'],
+    lines:[
+      ['red','Bomb... kenapa?'],
+      ['bomb','Di sini semua takut padaku. Pulau Hening menjanjikan tempat di mana aku tak perlu takut melukai siapa pun.'],
+      ['narr','WHOOSH! Bomb mendarat di tebing laut. Di dekatnya, timer detonator berdetak, terhubung ke peti peledak yang dipasang babi menghadap sarang kita.'],
+      ['bomb','A-aku bisa menjinakkannya. Tapi hanya jika aku tenang...'],
+      ['red','Tarik napas, Bomb. Kami di sini. Kau bukan monster.'],
+      ['narr','Dengan tangan gemetar, Bomb memotong sumbu terakhir. Ledakan batal, dan telur kembali ke tangan kawanan.'],
+      ['red','Kau akan kembali ke sarang, Bomb. Dan kali ini, tak ada yang akan menjauhimu.']
+    ],
+    summary:'Bomb menjinakkan sumbu di tebing laut dan diterima kembali oleh kawanan.' }),
+  win_matilda:c => ({ title:'TRUE VICTORY: Matilda, Diplomasi Palsu di Dermaga', tone:'win', scene:[['red',90],['chuck',90],['bomb',90],'egg'],
+    lines:[
+      ['matilda','Perdamaian tak datang dari kekerasan, Red. Kau tidak mengerti.'],
+      ['narr','WHOOSH! Matilda mendarat di dermaga babi sambil menggenggam pakta, dan memohon: "Gencatan senjata suci, seperti janjimu!"'],
+      ['pig','Hahaha! Damai? Kami hanya mau telur emasnya. Prajurit, siapkan perang!'],
+      ['narr','Wajah Matilda memucat. Diplomasi palsu itu hancur di depan matanya.'],
+      ['matilda','Aku... aku salah. Red, tolong! Telurnya ada di perahu terakhir!'],
+      ['narr','Chuck dan Bomb menyerbu dermaga. Telur diselamatkan sebelum perahu berlayar. Matilda, penuh sesal, kembali ke kawanan.']
+    ],
+    summary:'Diplomasi palsu King Pig terbongkar di dermaga. Telur selamat dan Matilda sadar telah ditipu.' }),
+  pig_win:c => ({ title:'TRUE VICTORY: Kostum Terlepas!', tone:'win', scene:[['pig',110],['red',90],['chuck',70],['bomb',70],['matilda',70]],
+    lines:[
+      ['red','Aku punya firasat. Selamat jalan, ' + NAME[c.fake] + ' (atau siapa pun kau).'],
+      ['narr','Di udara, seluruh kostum bulu palsu terlepas dan berhamburan. Di dalamnya... seekor babi hijau gemuk!'],
+      ['pig','Ngiiik! Kostumku! Cat hijauku luntur! TIDAAAK!'],
+      ['narr','Babi hijau itu terpelanting kembali ke istana King Pig dalam keadaan konyol, bercelana dalam bergambar apel.'],
+      ['narr','Burung asli ' + NAME[c.fake] + ' ditemukan terikat di gudang bawah tanah. Telur direbut kembali tanpa sepotong pun retak.'],
+      ['red','Jadi tak ada pengkhianat. Hanya babi yang pandai menyamar. Mulai sekarang, kita saling periksa dulu!']
+    ],
+    summary:'Penyamar babi terbongkar dan terpelanting ke istananya. Tidak ada burung yang berkhianat.' }),
+  red_honest:c => ({ title:'PSYCHOLOGICAL REVEAL: Pengakuan yang Jujur', tone:'win', scene:[['red',100],['chuck',80],['bomb',80],['matilda',80],'egg'],
+    lines:[
+      ['red','Dengar... aku harus jujur. Aku tidak ingat apa pun. Mungkin akulah yang menyembunyikan telur itu.'],
+      ['matilda','Oh Red sayang... kami tahu. Kau terlalu lama memikul semuanya sendirian.'],
+      ['chuck','Ayo cek bunker! Aku lari duluan!'],
+      ['narr','Di bunker rahasia milik Red, di balik tumpukan jerami, Telur Emas tergeletak aman dalam selimut.'],
+      ['bomb','Telurnya selamat... dan kau juga, Red.'],
+      ['red','Terima kasih. Aku akan beristirahat. Chuck memimpin patroli, Bomb menjaga pertahanan, Matilda mengurus diplomasi. Kita memimpin bersama.']
+    ],
+    summary:'Red mengakui memorinya hilang karena kelelahan kronis. Kawanan memaafkannya dan telur ditemukan di bunker.' }),
+  red_tyrant:c => ({ title:'BAD ENDING: Pemimpin yang Paranoid', tone:'lose', scene:[['red',100,true]],
+    lines:[
+      ['red','Tidak! Ini bukan salahku! Aku tak mungkin... Lontarkan saja ' + c.victim + '!'],
+      ['narr','WHOOSH! ' + c.victim + ' lenyap di cakrawala, tak bersalah.'],
+      ['narr','Sejak hari itu tak ada yang percaya Red. Setiap burung curiga pada yang lain. Dan Red mencurigai bayangannya sendiri.'],
+      ['narr','Kawanan tercerai-berai satu per satu. Tanpa kepercayaan, sarang tak terjaga.'],
+      ['narr','Berminggu-minggu kemudian, pulau runtuh oleh paranoia sang pemimpin. Telur Emas ditemukan di bunker, terlambat. Tak seorang pun tersisa untuk melihatnya.']
+    ],
+    summary:'Red menolak kenyataan dan melontarkan kawan tak bersalah. Kepercayaan hancur, pulau runtuh.' }),
+  lose_chuck:c => ({ title:'DISASTER: Rute Patroli Terjual', tone:'lose', scene:[['pig',110],['chuck',90],['red',80,true]],
+    lines:[
+      ['narr','WHOOSH! ' + c.victim + ' melayang keluar pulau selamanya, tak bersalah.'],
+      ['narr','Malam itu, Chuck diam-diam membocorkan sisa rute patroli. Pasukan babi masuk tanpa halangan.'],
+      ['narr','Chuck menerima suku cadang roketnya. Telur Emas dibawa menyeberangi selat.'],
+      ['red','Aku salah memilih. Pengkhianatnya masih di sampingku.']
+    ],
+    summary:'Kau melontarkan burung yang salah. Chuck menyelesaikan penjualan rute patroli.' }),
+  lose_bomb:c => ({ title:'DISASTER: Gerbang Pulau Hening', tone:'lose', scene:['tank', ['pig',100], ['red',80,true]],
+    lines:[
+      ['narr','WHOOSH! ' + c.victim + ' melayang keluar pulau selamanya, tak bersalah.'],
+      ['narr','Saat fajar, Bomb diam-diam menyalakan timer detonator di gerbang.'],
+      ['narr','Pasukan babi menyerbu lewat gerbang yang hancur. Bomb berangkat ke Pulau Hening dengan perahu babi, membawa telur.'],
+      ['red','Aku mengucilkan satu lagi... dan kehilangan segalanya.']
+    ],
+    summary:'Kau melontarkan burung yang salah. Bomb meledakkan gerbang dan pergi ke Pulau Hening.' }),
+  lose_matilda:c => ({ title:'DISASTER: Gencatan Senjata Palsu', tone:'lose', scene:[['pig',110],['matilda',90],['red',80,true]],
+    lines:[
+      ['narr','WHOOSH! ' + c.victim + ' melayang keluar pulau selamanya, tak bersalah.'],
+      ['narr','Malam itu Matilda menyerahkan telur di dermaga sebagai "gencatan senjata suci".'],
+      ['narr','King Pig tak punya niat damai. Perang meletus, dan sarang terbakar.'],
+      ['matilda','Ah... kenapa mereka berbohong?']
+    ],
+    summary:'Kau melontarkan burung yang salah. Matilda menyerahkan telur dan perang pecah.' }),
+  lose_pig:c => ({ title:'DISASTER: Pengkhianat Tak Pernah Ada', tone:'lose', scene:[['pig',110],['red',80,true]],
+    lines:[
+      ['narr','WHOOSH! ' + c.victim + ' yang asli melayang keluar pulau selamanya, tak bersalah.'],
+      ['narr','Si penyamar babi tetap berada di antara kawanan.'],
+      ['narr','Tengah malam, ia membukakan gerbang untuk komando babi. Telur raib.'],
+      ['pig','Hehehe... terima kasih, burung-burung bodoh.'],
+      ['red','Kita melontarkan teman sendiri...']
+    ],
+    summary:'Kau melontarkan burung yang salah. Penyamar babi membukakan gerbang untuk pasukannya.' })
+};
+function endingKey(choice){
+  const c = ui.case;
+  if(c.key === 'red') return choice === 'confess' ? 'red_honest' : 'red_tyrant';
+  if(choice === c.culprit) return c.key === 'pig' ? 'pig_win' : 'win_' + c.key;
+  return 'lose_' + c.key;
+}
+
+/* ===================== SELF TEST (mencegah teks undefined) ===================== */
+function selfTest(){
+  const bad = [], chk = (t, w) => { if(typeof t !== 'string' || /undefined|NaN|\[object|null/.test(t)) bad.push(w + ' => ' + t); };
+  Object.keys(SCN).forEach(k => {
+    const runs = k === 'pig' ? SUSPECTS : [null];
+    runs.forEach(f => {
+      const c = generateRandomCase(k, null, f);
+      chk(val(c.scn.councilOpen, c), k + ' open'); chk(val(c.scn.truth, c), k + ' truth');
+      c.scn.intro.forEach((l, i) => chk(l[1], k + ' intro' + i));
+      SUSPECTS.forEach(X => {
+        c.scn.alibi[X].forEach((t, i) => chk(t, k + ' alibi ' + X + i));
+        chk(pickBy(c.scn.facts, X, c), k + ' fact ' + X); chk(pickBy(c.scn.council, X, c), k + ' council ' + X);
+        Object.keys(c.placement).forEach(h => { const id = c.placement[h]; if(!id) return; chk(respond(X, id, c).text, k + ' respond ' + X + id); chk(respond(X, id, c).log, k + ' log ' + X + id); });
+      });
+      if(k !== 'red') chk(c.scn.confess(c.culprit), k + ' confess');
+      ['chuck', 'bomb', 'matilda', 'confess'].forEach(ch => {
+        const key = (c.key === 'red') ? (ch === 'confess' ? 'red_honest' : 'red_tyrant') : (ch === c.culprit ? (k === 'pig' ? 'pig_win' : 'win_' + k) : 'lose_' + k);
+        if(!ENDINGS[key]) bad.push('ending missing ' + key); else { const e = ENDINGS[key]({ victim:NAME[ch] || 'Red', fake:c.fake }); e.lines.forEach((l, i) => { chk(l[1], key + i); if(!SP[l[0]]) bad.push('speaker ' + l[0]); }); }
+      });
+    });
+  });
+  if(Object.keys(EV).length < 10) bad.push('pool kurang dari 10');
+  if(bad.length) console.warn('SelfTest masalah:', bad); else console.log('SelfTest OK: ' + Object.keys(EV).length + ' bukti, ' + Object.keys(ENDINGS).length + ' ending.');
+}
+
+/* ===================== UI HELPERS ===================== */
+function toast(msg, warn){
+  const t = $('#toast'); t.textContent = msg; t.className = 'show' + (warn ? ' warn' : '');
+  clearTimeout(ui.toastT); ui.toastT = setTimeout(() => { t.className = ''; }, 2800);
+}
+function barHtml(v){
+  const col = v < 45 ? '#10b981' : v < 75 ? '#f59e0b' : '#dc2626';
+  return `<div class="bar"><i style="width:${v}%;background:${col}"></i></div>`;
+}
+function swap(fn){
+  const st = $('#stage'); st.classList.add('out');
+  setTimeout(() => { fn(); st.classList.remove('out'); }, 350);
+}
+function go(p){
+  swap(() => { state.phase = p; renderHUD(); renderStage(); phaseStart(); });
+}
+const stressOf = id => state.stressLevels[id];
+const isPanic = id => state.stressLevels[id] !== undefined && state.stressLevels[id] >= 60;
+const shakeCls = id => { const v = state.stressLevels[id]; return v >= 75 ? 'shake' : v >= 45 ? 'tremble' : ''; };
+
+/* ===================== DIALOG (TYPEWRITER) ===================== */
+function say(key, text, opts){
+  clearInterval(ui.timer);
+  const sp = SP[key];
+  ui.opts = opts || {}; ui.full = text; ui.typing = true;
+  const sEl = $('#speaker'); sEl.textContent = sp.n; sEl.style.color = sp.c;
+  $('#portrait').innerHTML = key === 'narr' ? '<div class="text-3xl text-center">📜</div>' : avatar(key, 60, isPanic(key));
+  $('#choices').innerHTML = ''; $('#dtext').textContent = ''; $('#more').classList.add('hidden');
+  document.querySelectorAll('[data-av]').forEach(e => e.classList.toggle('speaking', e.dataset.av === key));
+  let i = 0;
+  ui.timer = setInterval(() => {
+    i++; $('#dtext').textContent = text.slice(0, i);
+    if(i >= text.length) finishTyping();
+  }, 22);
+}
+const sayS = (X, text, opts) => say(X, mood(X, text), opts);
+function finishTyping(){
+  if(!ui.typing) return;
+  clearInterval(ui.timer); ui.typing = false;
+  $('#dtext').textContent = ui.full;
+  const o = ui.opts, box = $('#choices'); box.innerHTML = '';
+  const mk = (label, fn, disabled, cls) => {
+    const b = document.createElement('button'); b.className = cls || 'choice'; b.textContent = label;
+    if(disabled) b.disabled = true;
+    b.onclick = e => { e.stopPropagation(); fn(); };
+    box.appendChild(b);
+  };
+  if(o.choices) o.choices.forEach(c => mk(c.label, c.fn, c.disabled));
+  else if(o.next){ mk('Lanjut ▶', o.next, false, 'choice text-center font-bold'); $('#more').classList.remove('hidden'); }
+}
+function seq(lines, done){
+  let i = 0;
+  const step = () => { const l = lines[i++]; say(l[0], l[1], { next: i < lines.length ? step : done }); };
+  step();
+}
+document.addEventListener('click', e => {
+  if(e.target.closest('button,[data-hot],#drawer,#scrim')) return;
+  if(ui.typing) finishTyping();
+  else if(e.target.closest('#dialog') && ui.opts && ui.opts.next && !ui.opts.choices) ui.opts.next();
+});
+document.addEventListener('click', e => { if(e.target.closest('button,.card')) sfx.click(); });
+
+/* ===================== RENDER ===================== */
+function renderHUD(){
+  $('#energy').innerHTML = Array.from({length:MAX_ENERGY}, (_, i) => `<span class="pip ${i < state.energy ? 'on' : ''}"></span>`).join('') + `<span class="ml-1 font-bold">${state.energy}</span>`;
+  $('#phase').textContent = 'Kasus #' + ui.caseNo + ' · ' + PH[state.phase];
+  $('#invcount').textContent = state.inventory.length;
+}
+function renderInv(){
+  const box = $('#inv');
+  if(!state.inventory.length){ box.innerHTML = '<p class="text-sm text-slate-400">Belum ada bukti. Periksa TKP untuk menemukan petunjuk.</p>'; return; }
+  box.innerHTML = state.inventory.map(it => `<div class="flex gap-2 p-2 rounded-lg bg-slate-900 border border-slate-700 fade-in">
+    <div class="shrink-0">${it.iconSvg}</div><div><div class="font-bold text-sm text-amber-300">${it.name}</div><div class="text-xs text-slate-300">${it.desc}</div></div></div>`).join('');
+}
+function mapSvg(){
+  const D = id => ui.searched[id] ? 'done' : '';
+  const chk = (x, y) => `<g class="check"><circle cx="${x}" cy="${y}" r="14" fill="#059669" stroke="#fff" stroke-width="2"/><path d="M${x-6} ${y} l4 5 l8 -9" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  const lbl = (x, y, t) => `<text x="${x}" y="${y}" text-anchor="middle" fill="#e2e8f0" font-size="15" font-weight="700" style="paint-order:stroke;stroke:#0f172a;stroke-width:4px">${t}</text>`;
+  return `<svg viewBox="0 0 800 480" class="w-full h-auto rounded-xl border-2 border-slate-700" role="img" aria-label="Denah sarang burung">
+  <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#4a2f55"/></linearGradient></defs>
+  <rect width="800" height="480" fill="url(#sky)"/>
+  <circle cx="710" cy="60" r="30" fill="#fde68a" opacity=".92"/>
+  <g fill="#fff" opacity=".7"><circle cx="90" cy="40" r="2"/><circle cx="220" cy="70" r="1.6"/><circle cx="520" cy="35" r="2"/><circle cx="610" cy="90" r="1.5"/><circle cx="330" cy="30" r="1.6"/></g>
+  <rect y="390" width="800" height="90" fill="#14231a"/>
+  <rect x="352" y="250" width="96" height="145" fill="#5b3a21"/>
+  <ellipse cx="400" cy="252" rx="240" ry="26" fill="#7c4a1e"/>
+  <g class="hot ${D('nest')}" data-hot="nest" tabindex="0" role="button" aria-label="Sarang Utama">
+    <ellipse class="pulse" cx="400" cy="205" rx="110" ry="62" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8 6"/>
+    <ellipse class="ring" cx="400" cy="205" rx="110" ry="62" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="3"/>
+    <g class="body"><ellipse cx="400" cy="228" rx="92" ry="28" fill="#a16207" stroke="#713f12" stroke-width="3"/>
+      <ellipse cx="400" cy="196" rx="26" ry="34" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="5 5" opacity=".8"/>
+      <rect x="368" y="150" width="64" height="40" rx="5" fill="#334155" stroke="#0f172a" stroke-width="3"/><circle cx="400" cy="170" r="6" fill="#94a3b8"/></g>
+    ${chk(480, 160)}${lbl(400, 290, 'Sarang Utama & Brankas Telur')}
+    <rect x="290" y="140" width="220" height="130" fill="transparent"/>
+  </g>
+  <g class="hot ${D('vent')}" data-hot="vent" tabindex="0" role="button" aria-label="Ventilasi Kayu Atas">
+    <rect class="pulse" x="585" y="95" width="130" height="105" rx="10" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8 6"/>
+    <rect class="ring" x="585" y="95" width="130" height="105" rx="10" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="3"/>
+    <g class="body"><rect x="595" y="105" width="110" height="85" fill="#6b4423" stroke="#3b2411" stroke-width="3"/>
+      <rect x="615" y="125" width="70" height="45" fill="#1c1208"/>
+      <path d="M615 135 H685 M615 148 H685 M615 161 H685" stroke="#8b5e34" stroke-width="5"/>
+      <path d="M650 125 L662 142 L648 150 L664 170" stroke="#1c1208" stroke-width="4" fill="none"/></g>
+    ${chk(705, 105)}${lbl(650, 222, 'Ventilasi Kayu Atas')}
+  </g>
+  <g class="hot ${D('fence')}" data-hot="fence" tabindex="0" role="button" aria-label="Batas Pagar Selatan">
+    <rect class="pulse" x="225" y="385" width="350" height="62" rx="12" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8 6"/>
+    <rect class="ring" x="225" y="385" width="350" height="62" rx="12" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="3"/>
+    <g class="body"><g fill="#8b5e34" stroke="#3b2411" stroke-width="2"><rect x="250" y="395" width="16" height="45"/><rect x="290" y="395" width="16" height="45"/><rect x="334" y="395" width="16" height="45"/><rect x="450" y="395" width="16" height="45"/><rect x="494" y="395" width="16" height="45"/><rect x="534" y="395" width="16" height="45"/></g>
+      <rect x="244" y="408" width="312" height="8" fill="#6b4423"/>
+      <path d="M372 440 q-6 -22 4 -32 q4 12 10 6 q2 14 12 16 q8 -6 6 -18 q12 14 4 28z" fill="#1c1917" stroke="#44403c"/></g>
+    ${chk(560, 392)}${lbl(400, 468, 'Batas Pagar Selatan')}
+  </g>
+  <g class="hot ${D('desk')}" data-hot="desk" tabindex="0" role="button" aria-label="Meja Kerja dan Pot Tanaman">
+    <rect class="pulse" x="40" y="270" width="190" height="105" rx="10" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8 6"/>
+    <rect class="ring" x="40" y="270" width="190" height="105" rx="10" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="3"/>
+    <g class="body"><rect x="55" y="318" width="160" height="14" fill="#8b5e34" stroke="#3b2411" stroke-width="2"/>
+      <rect x="65" y="332" width="12" height="36" fill="#6b4423"/><rect x="193" y="332" width="12" height="36" fill="#6b4423"/>
+      <path d="M85 318 L92 296 H128 L135 318Z" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+      <path d="M110 296 q-14 -26 -26 -22 q6 16 22 22 M110 296 q14 -30 28 -24 q-6 18 -26 24 M110 296 v-34" stroke="#16a34a" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <rect x="150" y="303" width="44" height="15" rx="2" fill="#e7e5e4" stroke="#78716c" transform="rotate(-6 172 310)"/></g>
+    ${chk(220, 280)}${lbl(135, 392, 'Meja Kerja & Pot Tanaman')}
+  </g>
+  <g class="hot ${D('pocket')}" data-hot="pocket" tabindex="0" role="button" aria-label="Kantong Red">
+    <rect class="pulse" x="636" y="254" width="112" height="112" rx="14" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8 6"/>
+    <rect class="ring" x="636" y="254" width="112" height="112" rx="14" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="3"/>
+    <g class="body"><g transform="translate(645 258) scale(.8)">${BIRD.red}<path d="M30 92 Q60 114 90 92 L84 106 Q60 124 36 106Z" fill="#facc15" stroke="#a16207" stroke-width="2"/><rect x="50" y="104" width="20" height="12" rx="3" fill="#a16207"/></g></g>
+    ${chk(740, 262)}${lbl(692, 386, 'Kantong Red')}
+  </g>
+</svg>`;
+}
+function councilBG(){
+  return `<svg viewBox="0 0 800 300" preserveAspectRatio="xMidYMax slice" class="absolute inset-0 w-full h-full" aria-hidden="true">
+    <defs><linearGradient id="csky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e1b4b"/><stop offset="1" stop-color="#7c2d12"/></linearGradient></defs>
+    <rect width="800" height="300" fill="url(#csky)"/>
+    <circle cx="620" cy="70" r="34" fill="#fde68a" opacity=".85"/>
+    <path d="M0 240 Q200 190 400 235 T800 220 V300 H0Z" fill="#14231a"/>
+    <rect y="262" width="800" height="38" fill="#0f1a13"/>
+    <path d="M400 300 V200" stroke="#6b3f1d" stroke-width="24" stroke-linecap="round"/>
+    <path d="M400 205 L352 110" stroke="#6b3f1d" stroke-width="20" stroke-linecap="round"/>
+    <path d="M400 205 L450 110" stroke="#6b3f1d" stroke-width="20" stroke-linecap="round"/>
+    <path d="M352 112 L400 165 L450 112" stroke="#451a03" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+function councilScene(){
+  const w = id => `<div data-av="${id}" class="av-wrap">${avatar(id, 62, false)}</div>`;
+  return `<div class="relative overflow-hidden rounded-xl border-2 border-slate-700 h-56 sm:h-72">${councilBG()}
+    <div class="absolute left-2 top-2 text-xs sm:text-sm font-bold text-amber-300 bg-slate-900/70 px-2 py-1 rounded">The Great Slingshot</div>
+    <div class="absolute inset-x-0 bottom-2 flex justify-around items-end px-1">${w('red')}${w('chuck')}<div class="w-14 sm:w-28"></div>${w('bomb')}${w('matilda')}</div></div>`;
+}
+function logPanel(){
+  const items = ui.log.length ? ui.log.map(l => `<li class="mb-1"><span class="font-bold" style="color:${SP[l.who].c}">${SP[l.who].n}:</span> ${l.text}</li>`).join('') : '<li class="text-slate-400">Tidak ada catatan interogasi.</li>';
+  const ev = state.inventory.length ? state.inventory.map(i => i.name).join(', ') : 'Tidak ada';
+  return `<div class="rpg p-3 mt-3 text-sm"><h3 class="font-extrabold text-amber-400 mb-1">📋 Log Dewan: Ringkasan Interogasi</h3><ul class="list-none">${items}</ul><p class="mt-2 text-xs text-slate-400"><b>Bukti terkumpul:</b> ${ev}</p></div>`;
+}
+function suspectCard(id, attr, disabled, extra){
+  return `<button class="card ${extra || ''}" ${attr}="${id}" ${disabled ? 'disabled' : ''}>
+    <div class="flex justify-center ${shakeCls(id)}">${avatar(id, 84, isPanic(id))}</div>
+    <div class="font-extrabold mt-1">${NAME[id]}</div>
+    <div class="text-xs text-slate-400 mb-1">Stress ${stressOf(id)}% · ${tierName(stressOf(id))}</div>${barHtml(stressOf(id))}</button>`;
+}
+function sceneHtml(tokens){
+  return tokens.map(t => {
+    if(t === 'egg') return `<svg viewBox="0 0 40 50" width="50" height="62"><ellipse cx="20" cy="26" rx="15" ry="20" fill="#fbbf24" stroke="#92400e" stroke-width="2"/><ellipse cx="14" cy="18" rx="4" ry="6" fill="#fff" opacity=".6"/></svg>`;
+    if(t === 'tank') return `<svg viewBox="0 0 160 90" width="150" height="85"><rect x="20" y="40" width="110" height="26" rx="6" fill="#64748b" stroke="#0f172a" stroke-width="3"/><rect x="45" y="22" width="55" height="22" rx="5" fill="#475569" stroke="#0f172a" stroke-width="3"/><rect x="95" y="28" width="60" height="7" fill="#334155" stroke="#0f172a" stroke-width="2"/><g fill="#1e293b" stroke="#94a3b8" stroke-width="2"><circle cx="38" cy="72" r="11"/><circle cx="75" cy="72" r="11"/><circle cx="112" cy="72" r="11"/></g></svg>`;
+    return avatar(t[0], t[1], !!t[2]);
+  }).join('');
+}
+function renderStage(){
+  const st = $('#stage'), p = state.phase, c = ui.case;
+  let h = '';
+  if(p === 'intro'){
+    const n = Object.keys(ui.seen).length;
+    h = `<div class="text-center py-4 fade-in">
+      <div class="flex justify-center items-end gap-2 sm:gap-6">${avatar('red', 120, false)}${avatar('pig', 100, false)}</div>
+      <h1 class="mt-3 text-3xl sm:text-5xl font-extrabold text-red-500 tracking-tight" style="text-shadow:0 3px 0 #7f1d1d">ANGRY BIRDS</h1>
+      <h2 class="text-xl sm:text-3xl font-bold text-amber-500">Traitor in the Nest</h2>
+      <div class="rpg inline-block mt-4 px-5 py-3 text-left max-w-sm">
+        <div class="text-xs uppercase tracking-widest text-amber-500">Berkas Kasus #${ui.caseNo}</div>
+        <div class="font-extrabold text-lg">${c.scn.title}</div>
+        <div class="text-xs text-slate-400 mt-1">Pelaku, bukti, dan dialog diacak tiap kasus. Ending ditemukan: ${n}/${TOTAL_ENDINGS}</div>
+      </div>
+      <p class="mt-4 text-[11px] text-slate-500">Karya penggemar non-komersial. Seluruh grafis dibuat dengan SVG inline.</p></div>`;
+  } else if(p === 'investigation'){
+    h = `<div class="fade-in">${mapSvg()}
+      <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+        <p class="text-xs sm:text-sm text-slate-400">Ketuk titik berpendar. Tiap pemeriksaan memakai 1 energi. Ada 5 titik, energimu ${MAX_ENERGY}.</p>
+        ${state.inventory.length ? '<button class="btn amber text-sm" data-act="end-invest">Akhiri investigasi ▶</button>' : ''}</div></div>`;
+  } else if(p === 'interrogation'){
+    if(!ui.current){
+      const n = state.interrogated.length;
+      h = `<div class="fade-in"><h3 class="font-extrabold text-amber-400 mb-2">Pilih tersangka untuk diinterogasi (${n}/2)</h3>
+        <div class="grid grid-cols-3 gap-2 sm:gap-4">${SUSPECTS.map(id => suspectCard(id, 'data-card', n >= 2 && !state.interrogated.includes(id), state.interrogated.includes(id) ? 'picked' : '')).join('')}</div>
+        <p class="text-xs text-slate-400 mt-2">Hijau = sudah dipilih. Hanya dua tersangka yang bisa diinterogasi. Stres tinggi belum tentu berarti bersalah.</p>
+        ${n >= 2 ? '<div class="text-center mt-4"><button class="btn green" data-act="to-trial">Menuju Sidang Dewan ▶</button></div>' : ''}</div>`;
+    } else {
+      const id = ui.current, v = stressOf(id);
+      h = `<div class="text-center fade-in"><div class="inline-block ${shakeCls(id)}">${avatar(id, 170, isPanic(id))}</div>
+        <h3 class="text-xl font-extrabold" style="color:${SP[id].c}">${NAME[id]}</h3>
+        <div class="max-w-xs mx-auto mt-1"><div class="text-xs text-slate-400 mb-1">Stress Level: ${v}% · ${tierName(v)}</div>${barHtml(v)}</div>
+        ${ui.resolved[id] ? '<div class="mt-2 inline-block text-xs font-bold px-3 py-1 rounded-full bg-red-900 border border-red-500">Alibi runtuh!</div>' : ''}</div>`;
+    }
+  } else if(p === 'trial'){
+    h = `<div class="fade-in">${councilScene()}${logPanel()}</div>`;
+  } else if(p === 'judgment'){
+    h = `<div class="fade-in">${councilScene()}
+      <h3 class="font-extrabold text-red-400 mt-3 mb-2 text-center">Siapa yang akan dilontarkan dari katapel?</h3>
+      <div class="grid grid-cols-3 gap-2 sm:gap-4">${SUSPECTS.map(id => suspectCard(id, 'data-pick', false)).join('')}</div>
+      ${c.key === 'red' ? '<div class="text-center mt-3"><button class="btn amber" data-act="confess">🕊️ Akui: "Mungkin akulah pelakunya"</button></div>' : ''}
+      ${logPanel()}</div>`;
+  } else if(p === 'ending'){
+    h = endingHtml();
+  }
+  st.innerHTML = h;
+}
+function endingHtml(){
+  const e = ui.end; if(!e) return '';
+  const win = e.tone === 'win';
+  const n = Object.keys(ui.seen).length;
+  const card = ui.endDone ? `<div class="rpg p-5 text-center mt-3 fade-in">
+      <h2 class="text-xl sm:text-3xl font-extrabold ${win ? 'text-emerald-500' : 'text-red-500'}">${e.title}</h2>
+      <p class="mt-2 text-slate-300">${e.summary}</p>
+      <p class="mt-2 text-sm text-amber-400"><b>Kebenaran kasus:</b> ${val(ui.case.scn.truth, ui.case)}</p>
+      <p class="mt-2 text-xs text-slate-400">Ending ditemukan: ${n}/${TOTAL_ENDINGS}</p>
+      <button class="btn mt-4" data-act="newcase">🎲 Kasus Baru (Acak Skenario)</button></div>` : '';
+  return `<div class="fade-in"><div class="rounded-xl border-2 ${win ? 'border-emerald-600' : 'border-red-700'} p-4 flex justify-center items-end gap-2 flex-wrap" style="background:linear-gradient(#0f172a,${win ? '#064e3b' : '#450a0a'})">${sceneHtml(e.scene)}</div>${card}</div>`;
+}
+
+/* ===================== PHASE FLOW ===================== */
+function phaseStart(){
+  const p = state.phase, c = ui.case;
+  if(p === 'intro'){
+    const lines = c.scn.intro.concat([['red','Aku hanya punya ' + MAX_ENERGY + ' energi sebelum siang, padahal ada 5 titik yang bisa diperiksa. Pilih dengan bijak.']]);
+    seq(lines, () => say('red','Siap memulai penyelidikan?', { choices:[{label:'Mulai Investigasi', fn:() => go('investigation')}] }));
+  } else if(p === 'investigation'){
+    ui.locked = false;
+    say('red','Inilah TKP-nya. Kelima titik ini bisa menyimpan petunjuk. Jangan lupa: tidak semua bukti mengarah ke kebenaran.');
+  } else if(p === 'interrogation'){
+    ui.current = null; ui.locked = false;
+    say('narr','Waktu interogasi. Pilih 2 dari 3 tersangka. Tanyakan alibi, tunjukkan bukti, atau minta kesaksian mereka tentang yang lain.');
+  } else if(p === 'trial'){
+    trialDialog();
+  } else if(p === 'judgment'){
+    say('red', c.key === 'red' ? 'Dewan telah bicara. Aku bisa melontarkan salah satu dari mereka... atau menghadapi kebenaran.' : 'Dewan telah mendengar semuanya. Pilih satu burung untuk dilontarkan selamanya dari pulau ini.');
+  } else if(p === 'ending'){
+    ui.endDone = false;
+    const ctx = { victim: NAME[state.accused] || 'Red', fake: c.fake };
+    ui.end = ENDINGS[state.endingType](ctx);
+    ui.seen[state.endingType] = true;
+    try { localStorage.setItem('abtn_seen', JSON.stringify(ui.seen)); } catch(e) { /* penyimpanan tidak tersedia */ }
+    renderStage();
+    seq(ui.end.lines, () => { ui.endDone = true; renderStage(); say('narr','Tamat. Tekan "Kasus Baru" untuk skenario acak berikutnya.'); });
+  }
+}
+function search(h){
+  if(ui.locked) return;
+  if(ui.searched[h]){ say('red','Area ini sudah kuperiksa. Jangan buang energi.'); return; }
+  if(state.energy <= 0) return;
+  const c = ui.case, id = c.placement[h];
+  state.energy--; ui.searched[h] = true;
+  let text;
+  if(id){
+    const it = EV[id];
+    state.inventory.push({ id, name:it.name, desc:it.desc, iconSvg:icon(it.icon, it.color) });
+    sfx.chime(); toast('Bukti baru: ' + it.name);
+    text = HS[h].where + ', ' + it.found;
+    if(c.key === 'red' && it.thought){ text += ' ' + it.thought; ui.suspicionRed++; setTimeout(() => sfx.sting(), 300); }
+  } else {
+    text = HS[h].empty;
+  }
+  renderHUD(); renderInv(); renderStage();
+  const cnt = $('#invcount'); cnt.classList.remove('badge-bump'); void cnt.offsetWidth; cnt.classList.add('badge-bump');
+  if(state.energy === 0){
+    ui.locked = true;
+    say('red', text, { next: () => { toast('Hari telah siang, waktu investigasi berakhir!', true); say('narr','Hari telah siang, waktu investigasi berakhir!', { next: () => go('interrogation') }); } });
+  } else {
+    say('red', text);
+  }
+}
+function addLog(k, who, text){ if(!ui.log.some(l => l.k === k)) ui.log.push({ k, who, text }); }
+function enterSuspect(id){
+  if(!state.interrogated.includes(id)){
+    if(state.interrogated.length >= 2){ say('narr','Hanya dua tersangka yang bisa diinterogasi.'); return; }
+    state.interrogated.push(id);
+  }
+  swap(() => { ui.current = id; renderStage(); sayS(id, PERS[id].intro, { next: () => suspectMenu(id) }); });
+}
+function suspectMenu(id){
+  say('red', 'Apa langkahku selanjutnya terhadap ' + NAME[id] + '?', { choices:[
+    { label:'Tanyakan alibi malam kejadian', fn:() => ask(id) },
+    { label:'Konfrontasi dengan bukti', fn:() => pickEvidence(id) },
+    { label:'Minta kesaksian tentang tersangka lain', fn:() => crossMenu(id) },
+    { label:'Selesai interogasi', fn:() => leave() }
+  ]});
+}
+function bump(id, n){ state.stressLevels[id] = Math.max(0, Math.min(100, state.stressLevels[id] + n)); }
+function refreshSuspect(){ if(state.phase === 'interrogation') renderStage(); }
+function ask(X){
+  const c = ui.case, arr = c.scn.alibi[X];
+  ui.alibi[X] = (ui.alibi[X] || 0) + 1;
+  const n = ui.alibi[X];
+  let line = arr[Math.min(n - 1, arr.length - 1)];
+  if(c.key === 'pig' && X === c.fake && n >= 2) line += ' Hik... ngik! Eh, maksudku, ehem.';
+  if(c.key === 'red') ui.suspicionRed++;
+  bump(X, X === c.culprit ? 10 : 6);
+  addLog(X + '-alibi', X, NAME[X] + ' beralibi: "' + firstSentence(arr[0]) + '"');
+  refreshSuspect();
+  sayS(X, line, { next: () => suspectMenu(X) });
+}
+function crossMenu(W){
+  const ch = SUSPECTS.filter(x => x !== W).map(T => ({ label:'Apa yang kau lihat dari ' + NAME[T] + '?', fn:() => cross(W, T) }));
+  ch.push({ label:'Batal', fn:() => suspectMenu(W) });
+  say('red','Aku ingin kesaksianmu soal tersangka lain, ' + NAME[W] + '.', { choices: ch });
+}
+function cross(W, T){
+  const c = ui.case, f = pickBy(c.scn.facts, T, c);
+  addLog(W + '-x-' + T, W, NAME[W] + ' bersaksi tentang ' + NAME[T] + ': "' + firstSentence(f) + '"');
+  if(c.key === 'red') ui.suspicionRed++;
+  bump(W, 2); refreshSuspect();
+  sayS(W, f, { next: () => suspectMenu(W) });
+}
+function pickEvidence(id){
+  if(!state.inventory.length){ say('red','Aku belum punya bukti apa pun.', { next: () => suspectMenu(id) }); return; }
+  const ch = state.inventory.map(it => ({ label: it.name, fn: () => confront(id, it.id) }));
+  ch.push({ label:'Batal', fn:() => suspectMenu(id) });
+  say('red','Bukti mana yang kutunjukkan pada ' + NAME[id] + '?', { choices: ch });
+}
+function confront(X, evId){
+  const c = ui.case, r = respond(X, evId, c);
+  if(r.beat) sfx.heartbeat();
+  if(r.crack){
+    ui.resolved[X] = true; state.stressLevels[X] = 100;
+    setTimeout(() => sfx.buzz(), 1200);
+  } else {
+    bump(X, r.delta);
+  }
+  if(r.red) ui.suspicionRed++;
+  addLog(X + '-ev-' + evId, X, r.log);
+  refreshSuspect();
+  sayS(X, r.text, { next: () => suspectMenu(X) });
+}
+function leave(){
+  swap(() => {
+    ui.current = null; renderStage();
+    say('narr', state.interrogated.length >= 2 ? 'Dua tersangka sudah diinterogasi. Saatnya menuju sidang.' : 'Pilih tersangka berikutnya.');
+  });
+}
+function trialDialog(){
+  const c = ui.case, s = c.scn;
+  const lines = [['red', val(s.councilOpen, c)]];
+  SUSPECTS.forEach(X => {
+    let t = pickBy(s.council, X, c);
+    if(ui.resolved[X]) t = c.key === 'pig' ? 'Hik! Oink... eh, ya, ya, aku ketahuan. Terserah kalian.' : 'Aku sudah mengaku di ruang interogasi. Sekarang keputusan ada di tanganmu, Red.';
+    lines.push([X, t]);
+  });
+  if(c.key === 'red'){
+    ui.suspicionRed++;
+    lines.push(['narr','Kepala Red berdenging. Potongan ingatan samar muncul: bunker, kunci, tangannya sendiri membawa sesuatu yang berkilau.']);
+    lines.push(['red','Kalian... mungkin tidak bersalah. Mungkin akulah yang... Tidak. Aku harus memutuskan.']);
+  } else {
+    lines.push(['red','Perhatikan Log Dewan. Waktunya memutuskan.']);
+  }
+  seq(lines, () => go('judgment'));
+}
+function confirmPick(id){
+  say('red', 'Lontarkan ' + NAME[id] + ' dari katapel? Keputusan ini tidak bisa ditarik.', { choices:[
+    { label:'Ya, lontarkan ' + NAME[id], fn:() => launch(id) },
+    { label:'Tidak, aku masih ragu', fn:() => say('red','Pikirkan baik-baik. Apa yang sebenarnya terjadi malam itu?') }
+  ]});
+}
+function confessPick(){
+  say('red','Aku akan mengakui kondisiku di depan seluruh kawanan. Yakin?', { choices:[
+    { label:'Ya, aku akan jujur', fn:() => {
+        state.accused = 'red'; state.endingType = endingKey('confess'); ui.locked = true;
+        say('red','Teman-teman... dengarkan aku. Aku harus mengatakan sesuatu.', { next: () => go('ending') });
+      } },
+    { label:'Tidak, belum sekarang', fn:() => say('red','Pikirkan baik-baik. Apa yang sebenarnya terjadi malam itu?') }
+  ]});
+}
+function launch(id){
+  state.accused = id; ui.locked = true;
+  state.endingType = endingKey(id);
+  $('#stage').innerHTML = `<div class="relative overflow-hidden rounded-xl border-2 border-slate-700 h-72 sm:h-96">${councilBG()}<div id="proj" class="proj">${avatar(id, 74, true)}</div></div>`;
+  say('narr', NAME[id] + ' dimasukkan ke Katapel Raksasa dan tali ditarik...');
+  setTimeout(() => { const pj = $('#proj'); if(pj) pj.classList.add('pull'); }, 300);
+  setTimeout(() => { sfx.whoosh(); const pj = $('#proj'); if(pj){ pj.classList.remove('pull'); pj.classList.add('fly'); } }, 1400);
+  if(state.endingType === 'pig_win'){
+    setTimeout(() => { const pj = $('#proj'); if(pj) pj.innerHTML = avatar('pig', 74, false); toast('Kostumnya terlepas di udara!'); sfx.sting(); }, 2300);
+  }
+  setTimeout(() => go('ending'), 3800);
+}
+function newCase(){
+  clearInterval(ui.timer);
+  const last = ui.case ? ui.case.key : null;
+  Object.assign(state, fresh());
+  Object.assign(ui, { locked:false, searched:{}, current:null, alibi:{}, resolved:{}, log:[], suspicionRed:0, typing:false, opts:{}, endDone:false, end:null });
+  ui.case = generateRandomCase(null, last);
+  ui.caseNo++;
+  state.scenario = ui.case.key;
+  renderInv();
+  go('intro');
+}
+
+/* ===================== EVENTS ===================== */
+$('#stage').addEventListener('click', e => {
+  const hot = e.target.closest('[data-hot]');
+  if(hot){ search(hot.dataset.hot); return; }
+  const card = e.target.closest('[data-card]');
+  if(card && !card.disabled){ enterSuspect(card.dataset.card); return; }
+  const pickEl = e.target.closest('[data-pick]');
+  if(pickEl && !ui.locked){ confirmPick(pickEl.dataset.pick); return; }
+  const act = e.target.closest('[data-act]');
+  if(!act || ui.locked && act.dataset.act !== 'newcase') return;
+  const a = act.dataset.act;
+  if(a === 'end-invest'){ ui.locked = true; say('narr','Kau menghentikan investigasi lebih awal.', { next: () => go('interrogation') }); }
+  else if(a === 'to-trial') go('trial');
+  else if(a === 'confess') confessPick();
+  else if(a === 'newcase') newCase();
+});
+$('#stage').addEventListener('keydown', e => {
+  if((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-hot]')){ e.preventDefault(); search(e.target.closest('[data-hot]').dataset.hot); }
+});
+const toggleDrawer = open => { $('#drawer').classList.toggle('open', open); $('#scrim').classList.toggle('open', open); };
+$('#invbtn').addEventListener('click', () => toggleDrawer(true));
+$('#invclose').addEventListener('click', () => toggleDrawer(false));
+$('#scrim').addEventListener('click', () => toggleDrawer(false));
+$('#mute').addEventListener('click', () => { ui.muted = !ui.muted; $('#mute').textContent = ui.muted ? '🔇' : '🔊'; });
+
+/* ===================== INIT ===================== */
+selfTest();
+ui.case = generateRandomCase();
+state.scenario = ui.case.key;
+renderHUD(); renderInv(); renderStage(); phaseStart();
+</script>
+</body>
+</html>
